@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Контекстная нейросеть</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h3>JavaScript нейросеть (в браузере)</h3>
+    <input type="text" id="jsInput" size="60" value="Это очень просто интересный текст, который действительно нужно обработать">
+    <button onclick="runJS()">Обработать</button>
+    <pre id="jsOutput"></pre>
+
+    <h3>PHP нейросеть (через AJAX)</h3>
+    <input type="text" id="phpInput" size="60" value="Такой вот пример наверное самый обычный но с шумом">
+    <button onclick="runPHP()">Обработать</button>
+    <pre id="phpOutput"></pre>
+
+    <script src="nn_core.js"></script>
+    <script>
+        const nn = new ContextNN();
+        function runJS() {
+            const text = document.getElementById('jsInput').value;
+            const result = nn.process(text);
+            document.getElementById('jsOutput').innerHTML = 
+                `Оригинал: ${result.original}\nОчищено: ${result.cleaned}\nБинарный код (первые 200 бит): ${result.binary.substring(0, 200)}...\nВесовая карта: ${JSON.stringify(result.contextWeights, null, 2)}`;
+        }
+        
+        function runPHP() {
+            const text = document.getElementById('phpInput').value;
+            fetch('nn_core.php?action=process&text=' + encodeURIComponent(text))
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('phpOutput').innerHTML = 
+                        `Оригинал: ${data.original}\nОчищено: ${data.cleaned}\nБинарный код: ${data.binary.substring(0, 200)}...\nВеса: ${JSON.stringify(data.contextWeights, null, 2)}`;
+                });
+        }
+    </script>
+
+    <?php
+    if (isset($_GET['action']) && $_GET['action'] === 'process' && isset($_GET['text'])) {
+        header('Content-Type: application/json');
+        require_once 'nn_core.php';
+        $nn = new ContextNN();
+        echo json_encode($nn->process($_GET['text']));
+        exit;
+    }
+    ?>
+</body>
+</html>
